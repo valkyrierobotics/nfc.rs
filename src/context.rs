@@ -1,14 +1,13 @@
-use ::ffi;
-use ::failure::{bail, Error};
+use crate::ffi;
+use failure::{bail, Error};
 
-use crate::device::NfcDevice;
+use crate::device::Device;
 
-
-pub struct NfcContext {
+pub struct Context {
     raw_context: *mut ffi::nfc_context,
 }
 
-impl NfcContext {
+impl Context {
     pub fn new() -> Result<Self, Error> {
         let mut new_context: *mut ffi::nfc_context = std::ptr::null_mut();
         unsafe {
@@ -19,14 +18,14 @@ impl NfcContext {
             bail!("Creating a new context failed");
         }
 
-        Ok(NfcContext{raw_context: new_context})
+        Ok(Context {
+            raw_context: new_context,
+        })
     }
 
-    pub fn open_device(&mut self, connstring: &str) -> Result<NfcDevice, Error>{
-        let mut connarr: [i8; 1024] = [0; 1024];
-        let end = std::cmp::min(1024, connstring.len());
-        connarr.copy_from_slice(&unsafe { &*(connstring.as_bytes() as *const _ as *const [i8]) }[0..end]);
-        
+    pub fn open_device(&mut self, connstring: &str) -> Result<Device, Error> {
+        let connarr = crate::util::str_to_connarr(connstring);
+
         let device;
         unsafe {
             device = ffi::nfc_open(self.raw_context, &connarr);
@@ -36,14 +35,19 @@ impl NfcContext {
             bail!("Failed to allocate nfc_device")
         }
 
-        Ok(NfcDevice::new(device, std::marker::PhantomData))
+        Ok(Device {
+            raw_device: device,
+            _phantom: std::marker::PhantomData,
+        })
     }
 }
 
-impl Drop for NfcContext {
+impl Drop for Context {
     fn drop(&mut self) {
-        unsafe {
-            ffi::nfc_exit(&mut self.raw_context);
+        if !self.raw_context.is_null() {
+            unsafe {
+                ffi::nfc_exit(self.raw_context);
+            }
         }
     }
 }
