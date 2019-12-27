@@ -23,6 +23,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "bit-vec"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4523a10839ffae575fb08aa3423026c8cb4687eef43952afb956229d4f246f7"
+
+[[package]]
 name = "cc"
 version = "1.0.48"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -84,6 +90,7 @@ dependencies = [
 name = "rnfc"
 version = "0.1.0"
 dependencies = [
+ "bit-vec",
  "failure",
  "libc",
  "rnfc-sys",

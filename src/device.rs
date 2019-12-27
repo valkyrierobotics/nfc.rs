@@ -130,7 +130,7 @@ impl<'context> Initiator<'context> {
     ) -> TargetResult {
         let count;
         // Safety: this is safe because if we don't get a target we return empty
-        let mut target: Target = unsafe { std::mem::zeroed() };
+        let mut target: ffi::nfc_target = unsafe { std::mem::zeroed() };
         let pollnumber = match poll_number {
             PollType::Limited(len) => len,
             PollType::Forever => 0xFF,
@@ -155,7 +155,7 @@ impl<'context> Initiator<'context> {
             bail!("Error during polling");
         } else {
             Ok(TargetResultEnum::Found {
-                0: TargetAndCount { count, target },
+                0: TargetAndCount { count, target: target.into() },
             })
         }
     }
@@ -166,7 +166,7 @@ impl<'context> Initiator<'context> {
         modulation: Modulation,
         pbtInitData: &[u8],
     ) -> TargetResult {
-        let mut target: Target = unsafe { std::mem::zeroed() };
+        let mut target: ffi::nfc_target = unsafe { std::mem::zeroed() };
         let count;
 
         unsafe {
@@ -185,7 +185,7 @@ impl<'context> Initiator<'context> {
             bail!("Error while trying to select passive target")
         } else {
             Ok(TargetResultEnum::Found {
-                0: TargetAndCount { count, target },
+                0: TargetAndCount { count, target: target.into() },
             })
         }
     }
@@ -195,7 +195,7 @@ impl<'context> Initiator<'context> {
         modulation: Modulation,
         max_targets: ffi::size_t,
     ) -> Vec<Target> {
-        let mut targets: Vec<Target> = Vec::with_capacity(max_targets);
+        let mut targets: Vec<ffi::nfc_target> = Vec::with_capacity(max_targets);
 
         // first resize the vector up to the requested maximum
         targets.resize(max_targets, unsafe { std::mem::zeroed() });
@@ -212,7 +212,7 @@ impl<'context> Initiator<'context> {
         }
 
         targets.resize(count.try_into().unwrap(), unsafe { std::mem::zeroed() });
-        targets
+        targets.iter().map(|iter| iter.into()).collect::<Vec<Target>>()
     }
 
     pub fn select_dep_target(
@@ -222,7 +222,7 @@ impl<'context> Initiator<'context> {
         dep_info: DepInfo,
         timeout: ffi::c_int,
     ) -> TargetResult {
-        let mut target: Target = unsafe { std::mem::zeroed() };
+        let mut target: ffi::nfc_target = unsafe { std::mem::zeroed() };
         let count;
         unsafe {
             count = ffi::nfc_initiator_select_dep_target(
@@ -241,17 +241,17 @@ impl<'context> Initiator<'context> {
             bail!("Error while trying to select DEP target")
         } else {
             Ok(TargetResultEnum::Found {
-                0: TargetAndCount { count, target },
+                0: TargetAndCount { count, target: target.into() },
             })
         }
     }
 
     pub fn target_is_present(&mut self, target: Target) -> bool {
-        unsafe { ffi::initiator_target_is_present(self.raw_device, &target) == 0 }
+        unsafe { ffi::nfc_initiator_target_is_present(self.raw_device, &target.into()) == 0 }
     }
 
     pub fn last_target_is_present(&mut self) -> bool {
-        unsafe { ffi::initiator_target_is_present(self.raw_device, std::ptr::null()) == 0 }
+        unsafe { ffi::nfc_initiator_target_is_present(self.raw_device, std::ptr::null()) == 0 }
     }
 
     pub fn set_bool_property(&mut self, property: Property, enable: bool) -> Result<(), Error> {
@@ -339,6 +339,12 @@ impl<'context> Initiator<'context> {
                 BitVec::from_bytes(&mut parity),
             ))
         }
+    }
+
+    pub fn deselect_target(&mut self) -> Result<(), Error>{
+        let ret = unsafe { ffi::nfc_initiator_deselect_target(self.raw_device) };
+        if ret >= 0 { Ok(()) }
+        else { bail!("Error when deselecting target") }
     }
 }
 

@@ -11,9 +11,11 @@ pub use ffi::{
 };
 
 pub use context::Context;
-pub use device::{Device, Initiator, PollType};
+pub use device::{Device, Initiator, PollType, TargetResultEnum, TargetAndCount};
 pub use failure::Error;
-pub use target::Target;
+pub use target::{Target, TargetInfo};
+
+pub use target::target_info;
 
 pub fn version() -> &'static str {
     unsafe {
