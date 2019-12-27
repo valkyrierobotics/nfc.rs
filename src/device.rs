@@ -1,8 +1,9 @@
 #![allow(non_snake_case)]
 
 use crate::ffi;
+use bit_vec::BitVec;
 
-use crate::{Modulation, Target};
+use crate::{BaudRate, DepInfo, DepMode, Modulation, Property, Target};
 
 use failure::{bail, Error};
 use std::convert::TryInto;
@@ -10,6 +11,32 @@ use std::convert::TryInto;
 pub struct Device<'context> {
     pub(crate) raw_device: *mut ffi::nfc_device,
     pub(crate) _phantom: std::marker::PhantomData<&'context ffi::nfc_device>,
+}
+
+impl<'context> Device<'context> {
+    pub fn set_bool_property(&mut self, property: Property, enable: bool) -> Result<(), Error> {
+        let res;
+        unsafe {
+            res = ffi::nfc_device_set_property_bool(self.raw_device, property, enable);
+        }
+
+        if res != 0 {
+            bail!("Failed to set bool property")
+        }
+        Ok(())
+    }
+
+    pub fn set_int_property(&mut self, property: Property, value: ffi::c_int) -> Result<(), Error> {
+        let res;
+        unsafe {
+            res = ffi::nfc_device_set_property_int(self.raw_device, property, value);
+        }
+
+        if res != 0 {
+            bail!("Failed to set int property")
+        }
+        Ok(())
+    }
 }
 
 pub struct SecureInitiator<'context>(Initiator<'context>);
@@ -163,19 +190,155 @@ impl<'context> Initiator<'context> {
         }
     }
 
-    pub fn list_passive_targets(&mut self, modulation: Modulation, max_targets: ffi::size_t) -> Vec<Target> {
+    pub fn list_passive_targets(
+        &mut self,
+        modulation: Modulation,
+        max_targets: ffi::size_t,
+    ) -> Vec<Target> {
         let mut targets: Vec<Target> = Vec::with_capacity(max_targets);
+
+        // first resize the vector up to the requested maximum
         targets.resize(max_targets, unsafe { std::mem::zeroed() });
         let count;
         unsafe {
-            count = ffi::nfc_initiator_list_passive_targets(self.raw_device,
-                                                                modulation,
-                                                                targets.as_mut_ptr(),
-                                                                targets.len())
+            // Safety: raw_device can only be non-null,
+            //  targets must be the right length as we check for the len and resize it.
+            count = ffi::nfc_initiator_list_passive_targets(
+                self.raw_device,
+                modulation,
+                targets.as_mut_ptr(),
+                targets.len(),
+            )
         }
 
         targets.resize(count.try_into().unwrap(), unsafe { std::mem::zeroed() });
         targets
+    }
+
+    pub fn select_dep_target(
+        &mut self,
+        ndm: DepMode,
+        nbr: BaudRate,
+        dep_info: DepInfo,
+        timeout: ffi::c_int,
+    ) -> TargetResult {
+        let mut target: Target = unsafe { std::mem::zeroed() };
+        let count;
+        unsafe {
+            count = ffi::nfc_initiator_select_dep_target(
+                self.raw_device,
+                ndm,
+                nbr,
+                &dep_info,
+                &mut target,
+                timeout,
+            );
+        }
+
+        if count == 0 {
+            Ok(TargetResultEnum::Empty)
+        } else if count < 0 {
+            bail!("Error while trying to select DEP target")
+        } else {
+            Ok(TargetResultEnum::Found {
+                0: TargetAndCount { count, target },
+            })
+        }
+    }
+
+    pub fn target_is_present(&mut self, target: Target) -> bool {
+        unsafe { ffi::initiator_target_is_present(self.raw_device, &target) == 0 }
+    }
+
+    pub fn last_target_is_present(&mut self) -> bool {
+        unsafe { ffi::initiator_target_is_present(self.raw_device, std::ptr::null()) == 0 }
+    }
+
+    pub fn set_bool_property(&mut self, property: Property, enable: bool) -> Result<(), Error> {
+        let res;
+        unsafe {
+            res = ffi::nfc_device_set_property_bool(self.raw_device, property, enable);
+        }
+
+        if res != 0 {
+            bail!("Failed to set bool property")
+        }
+        Ok(())
+    }
+
+    pub fn set_int_property(&mut self, property: Property, value: ffi::c_int) -> Result<(), Error> {
+        let res;
+        unsafe {
+            res = ffi::nfc_device_set_property_int(self.raw_device, property, value);
+        }
+
+        if res != 0 {
+            bail!("Failed to set int property")
+        }
+        Ok(())
+    }
+
+    pub fn transceive_bytes(
+        &mut self,
+        send: &[u8],
+        receive_size: ffi::size_t,
+        timeout: ffi::c_int,
+    ) -> Result<Vec<u8>, Error> {
+        let mut received: Vec<u8> = vec![0; receive_size];
+        let res;
+        unsafe {
+            res = ffi::nfc_initiator_transceive_bytes(
+                self.raw_device,
+                send.as_ptr(),
+                send.len(),
+                received.as_mut_ptr(),
+                received.len(),
+                timeout,
+            )
+        }
+
+        // TOOD better error handling for EOVFLOW
+        if res < 0 {
+            bail!("Error during byte transaction")
+        } else {
+            Ok(received)
+        }
+    }
+
+    pub fn transceive_bits(
+        &mut self,
+        send: &BitVec,
+        parity_bits: &BitVec,
+        receive_bits: ffi::size_t,
+    ) -> Result<(BitVec, BitVec), Error> {
+        let mut received: Vec<u8> = vec![0; receive_bits];
+        let mut parity: Vec<u8> = vec![0; receive_bits / 8];
+        let res;
+        unsafe {
+            res = ffi::nfc_initiator_transceive_bits(
+                self.raw_device,
+                send.to_bytes().as_ptr(),
+                send.len(),
+                parity_bits
+                    .iter()
+                    .map(|iter| iter as u8)
+                    .collect::<Vec<u8>>()
+                    .as_ptr(),
+                received.as_mut_ptr(),
+                received.len(),
+                parity.as_mut_ptr(),
+            )
+        }
+
+        // TOOD better error handling for EOVFLOW
+        if res < 0 {
+            bail!("Error during bit transaction")
+        } else {
+            Ok((
+                BitVec::from_bytes(&mut received),
+                BitVec::from_bytes(&mut parity),
+            ))
+        }
     }
 }
 
