@@ -1,9 +1,8 @@
-pub use rnfc_sys as ffi;
-
 mod context;
 mod device;
 mod target;
 mod util;
+mod ffi;
 
 pub use ffi::{
     nfc_baud_rate as BaudRate, nfc_dep_info as DepInfo, nfc_dep_mode as DepMode,

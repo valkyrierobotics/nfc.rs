@@ -29,40 +29,40 @@ pub enum TargetInfo {
 impl From<ffi::nfc_target> for Target {
     fn from(target: ffi::nfc_target) -> Target {
         let inner = unsafe {
-            match target.modulation.modulation {
-                ffi::nfc_modulation_type::ISO14443A => TargetInfo::ISO14443A {
-                    info: target.target_info.nai,
+            match target.nm.nmt {
+                ffi::nfc_modulation_type::NMT_ISO14443A => TargetInfo::ISO14443A {
+                    info: target.nti.nai,
                 },
-                ffi::nfc_modulation_type::ISO14443B => TargetInfo::ISO14443B {
-                    info: target.target_info.nbi,
+                ffi::nfc_modulation_type::NMT_ISO14443B => TargetInfo::ISO14443B {
+                    info: target.nti.nbi,
                 },
-                ffi::nfc_modulation_type::ISO14443BI => TargetInfo::ISO14443BI {
-                    info: target.target_info.nii,
+                ffi::nfc_modulation_type::NMT_ISO14443BI => TargetInfo::ISO14443BI {
+                    info: target.nti.nii,
                 },
-                ffi::nfc_modulation_type::ISO14443B2SR => TargetInfo::ISO14443B2SR {
-                    info: target.target_info.nsi,
+                ffi::nfc_modulation_type::NMT_ISO14443B2SR => TargetInfo::ISO14443B2SR {
+                    info: target.nti.nsi,
                 },
-                ffi::nfc_modulation_type::ISO14443B2CT => TargetInfo::ISO14443B2CT {
-                    info: target.target_info.nci,
+                ffi::nfc_modulation_type::NMT_ISO14443B2CT => TargetInfo::ISO14443B2CT {
+                    info: target.nti.nci,
                 },
-                ffi::nfc_modulation_type::FELICA => TargetInfo::FELICA {
-                    info: target.target_info.nfi,
+                ffi::nfc_modulation_type::NMT_FELICA => TargetInfo::FELICA {
+                    info: target.nti.nfi,
                 },
-                ffi::nfc_modulation_type::BARCODE => TargetInfo::BARCODE {
-                    info: target.target_info.nti,
+                ffi::nfc_modulation_type::NMT_BARCODE => TargetInfo::BARCODE {
+                    info: target.nti.nti,
                 },
-                ffi::nfc_modulation_type::JEWEL => TargetInfo::JEWEL {
-                    info: target.target_info.nji,
+                ffi::nfc_modulation_type::NMT_JEWEL => TargetInfo::JEWEL {
+                    info: target.nti.nji,
                 },
-                ffi::nfc_modulation_type::DEP => TargetInfo::DEP {
-                    info: target.target_info.ndi,
+                ffi::nfc_modulation_type::NMT_DEP => TargetInfo::DEP {
+                    info: target.nti.ndi,
                 },
             }
         };
 
         Target {
             info: inner,
-            baud_rate: target.modulation.baud_rate,
+            baud_rate: target.nm.nbr,
         }
     }
 }
@@ -78,47 +78,47 @@ impl Into<ffi::nfc_target> for Target {
         let specifics = match self.info {
             TargetInfo::ISO14443A { info } => (
                 ffi::nfc_target_info { nai: info },
-                ffi::nfc_modulation_type::ISO14443A,
+                ffi::nfc_modulation_type::NMT_ISO14443A,
             ),
             TargetInfo::FELICA { info } => (
                 ffi::nfc_target_info { nfi: info },
-                ffi::nfc_modulation_type::FELICA,
+                ffi::nfc_modulation_type::NMT_FELICA,
             ),
             TargetInfo::ISO14443B { info } => (
                 ffi::nfc_target_info { nbi: info },
-                ffi::nfc_modulation_type::ISO14443B,
+                ffi::nfc_modulation_type::NMT_ISO14443B,
             ),
             TargetInfo::ISO14443BI { info } => (
                 ffi::nfc_target_info { nii: info },
-                ffi::nfc_modulation_type::ISO14443BI,
+                ffi::nfc_modulation_type::NMT_ISO14443BI,
             ),
             TargetInfo::ISO14443B2SR { info } => (
                 ffi::nfc_target_info { nsi: info },
-                ffi::nfc_modulation_type::ISO14443B2SR,
+                ffi::nfc_modulation_type::NMT_ISO14443B2SR,
             ),
             TargetInfo::ISO14443B2CT { info } => (
                 ffi::nfc_target_info { nci: info },
-                ffi::nfc_modulation_type::ISO14443B2CT,
+                ffi::nfc_modulation_type::NMT_ISO14443B2CT,
             ),
             TargetInfo::JEWEL { info } => (
                 ffi::nfc_target_info { nji: info },
-                ffi::nfc_modulation_type::JEWEL,
+                ffi::nfc_modulation_type::NMT_JEWEL,
             ),
             TargetInfo::BARCODE { info } => (
                 ffi::nfc_target_info { nti: info },
-                ffi::nfc_modulation_type::BARCODE,
+                ffi::nfc_modulation_type::NMT_BARCODE,
             ),
             TargetInfo::DEP { info } => (
                 ffi::nfc_target_info { ndi: info },
-                ffi::nfc_modulation_type::DEP,
+                ffi::nfc_modulation_type::NMT_DEP,
             ),
         };
 
         ffi::nfc_target {
-            target_info: specifics.0,
-            modulation: ffi::nfc_modulation {
-                modulation: specifics.1,
-                baud_rate: self.baud_rate,
+            nti: specifics.0,
+            nm: ffi::nfc_modulation {
+                nmt: specifics.1,
+                nbr: self.baud_rate,
             },
         }
     }

@@ -8,6 +8,8 @@ edition = "2018"
 
 [dependencies]
 libc = "0.2.66"
-rnfc-sys = { path = "../rnfc-sys" }
 failure = "0.1.6"
 bit-vec = "0.6.1"
+
+[build-dependencies]
+bindgen = "0.52.0"

@@ -24,11 +24,11 @@ impl Context {
     }
 
     pub fn open_device(&mut self, connstring: &str) -> Result<Device, Error> {
-        let connarr = crate::util::str_to_connarr(connstring);
+        let mut connarr = crate::util::str_to_connarr(connstring);
 
         let device;
         unsafe {
-            device = ffi::nfc_open(self.raw_context, &connarr);
+            device = ffi::nfc_open(self.raw_context, connarr.as_mut_ptr());
         }
 
         if device.is_null() {
