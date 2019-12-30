@@ -9,11 +9,13 @@ pub mod target_info {
     };
 }
 
+#[derive(Copy, Clone)]
 pub struct Target {
     pub baud_rate: crate::BaudRate,
     pub info: TargetInfo,
 }
 
+#[derive(Copy, Clone)]
 pub enum TargetInfo {
     ISO14443A { info: target_info::Iso14443aInfo },
     FELICA { info: target_info::FelicaInfo },

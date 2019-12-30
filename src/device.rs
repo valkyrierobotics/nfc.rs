@@ -194,7 +194,7 @@ impl<'context> Initiator<'context> {
         &mut self,
         modulation: Modulation,
         max_targets: ffi::size_t,
-    ) -> Vec<Target> {
+    ) -> Result<Vec<Target>, Error> {
         let mut targets: Vec<ffi::nfc_target> = Vec::with_capacity(max_targets);
 
         // first resize the vector up to the requested maximum
@@ -211,8 +211,12 @@ impl<'context> Initiator<'context> {
             )
         }
 
+        if count < 0 {
+            bail!("Failed to list passive targets");
+        }
+
         targets.resize(count.try_into().unwrap(), unsafe { std::mem::zeroed() });
-        targets.iter().map(|iter| iter.into()).collect::<Vec<Target>>()
+        Ok(targets.iter().map(|iter| iter.into()).collect::<Vec<Target>>())
     }
 
     pub fn select_dep_target(
