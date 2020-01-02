@@ -1,5 +1,5 @@
 [package]
-name = "rnfc"
+name = "nfcrs"
 version = "0.1.0"
 authors = ["Lee Mracek <lee.mracek@gmail.com>"]
 edition = "2018"
