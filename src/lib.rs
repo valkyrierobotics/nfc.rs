@@ -1,8 +1,9 @@
 mod context;
 mod device;
+mod error;
+mod ffi;
 mod target;
 mod util;
-mod ffi;
 
 pub use ffi::{
     nfc_baud_rate as BaudRate, nfc_dep_info as DepInfo, nfc_dep_mode as DepMode,
@@ -10,11 +11,12 @@ pub use ffi::{
 };
 
 pub use context::Context;
-pub use device::{Device, Initiator, PollType, TargetResultEnum, TargetAndCount};
-pub use failure::Error;
+pub use device::{Device, Initiator, PollType, TargetAndCount, TargetResultEnum};
 pub use target::{Target, TargetInfo};
 
 pub use target::target_info;
+
+pub use error::{NfcError as Error, NfcResult as Result};
 
 pub fn version() -> &'static str {
     unsafe {
