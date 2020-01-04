@@ -346,16 +346,6 @@ impl<'context> Initiator<'context> {
     }
 }
 
-impl<'context> Drop for Initiator<'context> {
-    fn drop(&mut self) {
-        if !self.device.raw_device.is_null() {
-            unsafe {
-                ffi::nfc_close(self.device.raw_device);
-            }
-        }
-    }
-}
-
 impl<'context> Drop for Device<'context> {
     fn drop(&mut self) {
         if !self.raw_device.is_null() {

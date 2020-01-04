@@ -1,3 +1,11 @@
+//! # NFC.rs
+//!
+//! NFC.rs wraps the popular libnfc C library in idiomatic Rust, making it both safer
+//! and easier to use.
+//!
+
+////////////////////////////////////////////////////////////////////////////////
+
 mod context;
 mod device;
 mod error;
@@ -18,6 +26,7 @@ pub use target::target_info;
 
 pub use error::{NfcError as Error, NfcResult as Result};
 
+/// Retrieves the version of the linked NFC library.
 pub fn version() -> &'static str {
     unsafe {
         std::ffi::CStr::from_ptr(ffi::nfc_version())
