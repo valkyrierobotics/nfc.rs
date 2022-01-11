@@ -5,6 +5,7 @@ pub mod target_info {
         nfc_barcode_info as BarcodeInfo, nfc_dep_info as DepInfo, nfc_felica_info as FelicaInfo,
         nfc_iso14443a_info as Iso14443aInfo, nfc_iso14443b2ct_info as Iso14443b2ctInfo,
         nfc_iso14443b2sr_info as Iso14443b2srInfo, nfc_iso14443b_info as Iso14443bInfo,
+        nfc_iso14443biclass_info as Iso14443biclassInfo,
         nfc_iso14443bi_info as Iso14443biInfo, nfc_jewel_info as JewelInfo,
     };
 }
@@ -21,6 +22,7 @@ pub enum TargetInfo {
     FELICA { info: target_info::FelicaInfo },
     ISO14443B { info: target_info::Iso14443bInfo },
     ISO14443BI { info: target_info::Iso14443biInfo },
+    ISO14443BICLASS { info: target_info::Iso14443biclassInfo },
     ISO14443B2SR { info: target_info::Iso14443b2srInfo },
     ISO14443B2CT { info: target_info::Iso14443b2ctInfo },
     JEWEL { info: target_info::JewelInfo },
@@ -40,6 +42,9 @@ impl From<ffi::nfc_target> for Target {
                 },
                 ffi::nfc_modulation_type::NMT_ISO14443BI => TargetInfo::ISO14443BI {
                     info: target.nti.nii,
+                },
+                ffi::nfc_modulation_type::NMT_ISO14443BICLASS => TargetInfo::ISO14443BICLASS {
+                    info: target.nti.nhi,
                 },
                 ffi::nfc_modulation_type::NMT_ISO14443B2SR => TargetInfo::ISO14443B2SR {
                     info: target.nti.nsi,
@@ -113,6 +118,10 @@ impl Into<ffi::nfc_target> for Target {
             TargetInfo::DEP { info } => (
                 ffi::nfc_target_info { ndi: info },
                 ffi::nfc_modulation_type::NMT_DEP,
+            ),
+            TargetInfo::ISO14443BICLASS { info } => (
+                ffi::nfc_target_info { nhi: info },
+                ffi::nfc_modulation_type::NMT_ISO14443BICLASS,
             ),
         };
 
